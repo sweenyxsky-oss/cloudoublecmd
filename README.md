@@ -92,7 +92,7 @@ For each folder, add a volume to the YAML and an entry to `connections.json`, th
 
 ### Notes and limits
 
-- Archive packing uses the container's temporary space. That is set to 4 GB in the YAML. Raise `size=` in `tmpfs` (it uses RAM) to pack larger selections.
+- Packing and extracting have no size or time limit. Work happens on your pool's disks, not in memory, so the only limit is free space on the destination dataset.
 - Deleting is permanent. Turn on TrueNAS snapshots for writable datasets.
 - Keep port 7080 on your local network. For remote access, use an HTTPS reverse proxy or VPN. Never forward the port to the internet.
 - Jobs live in memory. If the container stops during a transfer, files that already finished copying stay in place.

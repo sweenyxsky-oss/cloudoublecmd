@@ -22,7 +22,7 @@ services:
       - /mnt/tank/cloudoublecmd/files:/data/files
     read_only: true
     tmpfs:
-      - /tmp:rw,nosuid,nodev,noexec,size=4g,uid=1000,gid=1000,mode=0700
+      - /tmp:rw,nosuid,nodev,noexec,size=512m,uid=1000,gid=1000,mode=0700
     cap_drop:
       - ALL
     security_opt:
