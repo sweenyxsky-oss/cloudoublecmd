@@ -1,0 +1,3 @@
+[
+  { "id": "files", "label": "Files", "protocol": "local", "root": "/data/files", "writable": true }
+]

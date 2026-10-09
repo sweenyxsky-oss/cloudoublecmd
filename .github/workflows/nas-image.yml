@@ -1,0 +1,53 @@
+name: NAS image (app + access service)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Build the self-hosted app
+        run: |
+          bun install --frozen-lockfile
+          bunx vite build -c vite.nas.config.ts
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install verified archive utility
+        run: |
+          curl -fsSL https://www.7-zip.org/a/7z2600-linux-x64.tar.xz -o /tmp/7zip.tar.xz
+          echo "c74dc4a48492cde43f5fec10d53fb2a66f520e4a62a69d630c44cb22c477edc6  /tmp/7zip.tar.xz" | sha256sum -c -
+          mkdir /tmp/7zip
+          tar -xJf /tmp/7zip.tar.xz -C /tmp/7zip
+          sudo install -m 755 /tmp/7zip/7zzs /usr/local/bin/7z
+      - name: Test app
+        run: bunx vitest run
+      - name: Test access service
+        working-directory: services/truenas-access
+        run: |
+          npm ci
+          npm test
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Image name
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/cloudoublecmd:latest" >> "$GITHUB_ENV"
+      - uses: docker/build-push-action@v6
+        with:
+          context: services/truenas-access
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.IMAGE }}
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
