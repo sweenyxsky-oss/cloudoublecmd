@@ -46,7 +46,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Image name
-        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/cloudoublecmd:latest" >> "$GITHUB_ENV"
+        # Each repository publishes the image it owns, so the upload is never refused.
+        run: |
+          if [ "${GITHUB_REPOSITORY#*/}" = "cloudoublecmd" ]; then
+            echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/cloudoublecmd-app:latest" >> "$GITHUB_ENV"
+          else
+            echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/cloudoublecmd:latest" >> "$GITHUB_ENV"
+          fi
       - uses: docker/build-push-action@v6
         with:
           context: services/truenas-access
