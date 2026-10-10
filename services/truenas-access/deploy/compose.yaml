@@ -1,5 +1,6 @@
-# TrueNAS Custom App YAML. Replace tank/cloudoublecmd with your actual production dataset.
-# Never expose this HTTP port to the internet; use a trusted HTTPS reverse proxy for remote access.
+# TrueNAS Custom App YAML (Apps → Discover → ⋮ → Install via YAML).
+# Replace every "tank" with your pool name. Add one volume line per extra pool.
+# Never expose this port to the internet; use a VPN or HTTPS reverse proxy for remote access.
 services:
   commander:
     image: ghcr.io/sweenyxsky-oss/cloudoublecmd:latest
@@ -15,11 +16,13 @@ services:
       ACCESS_TOKEN_FILE: /run/secrets/access_token
       CONNECTIONS_FILE: /run/secrets/connections.json
     volumes:
+      # App settings (read-only on purpose: these are secrets, not your files).
       - /mnt/tank/cloudoublecmd/config/access_token:/run/secrets/access_token:ro
       - /mnt/tank/cloudoublecmd/config/ui_password:/run/secrets/ui_password:ro
       - /mnt/tank/cloudoublecmd/config/connections.json:/run/secrets/connections.json:ro
-      # Only mount datasets which the application should access.
-      - /mnt/tank/cloudoublecmd/files:/data/files
+      # Your data: whole pools, read-write. Add one line per pool, e.g.
+      # - /mnt/fast:/data/fast
+      - /mnt/tank:/data/tank
     read_only: true
     tmpfs:
       - /tmp:rw,nosuid,nodev,noexec,size=512m,uid=1000,gid=1000,mode=0700

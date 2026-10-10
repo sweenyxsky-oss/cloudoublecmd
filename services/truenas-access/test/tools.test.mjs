@@ -61,7 +61,7 @@ test('compare and occupied space', async () => {
     assert.equal(diff.body.identical, false); assert.equal(diff.body.right, 'line1\nchanged\n');
     assert.equal((await post('compare', { ...here, name: 'one.txt', other: { ...here, name: 'one.txt' } })).body.identical, true);
     const size = await post('occupied', { ...here, names: ['docs', 'one.txt'] });
-    assert.deepEqual(size.body, { bytes: 5012, files: 2, folders: 1 });
+    assert.deepEqual(size.body, { bytes: 5012, files: 2, folders: 1, skipped: 0 });
   } finally { server.closeAllConnections(); server.close(); }
 });
 

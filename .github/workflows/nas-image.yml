@@ -29,6 +29,9 @@ jobs:
           mkdir /tmp/7zip
           tar -xJf /tmp/7zip.tar.xz -C /tmp/7zip
           sudo install -m 755 /tmp/7zip/7zzs /usr/local/bin/7z
+          mkdir -p services/truenas-access/vendor/7zip
+          install -m 755 /tmp/7zip/7zzs services/truenas-access/vendor/7zip/7zzs
+          cp /tmp/7zip/License.txt services/truenas-access/vendor/7zip/License.txt
       - name: Test app
         run: bunx vitest run
       - name: Test access service

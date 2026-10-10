@@ -1,14 +1,8 @@
 FROM node:22-alpine
-# Official x86_64 build includes RAR/RAR5 decoding; Alpine's package disables it.
-RUN apk add --no-cache curl xz \
- && curl -fsSL https://www.7-zip.org/a/7z2600-linux-x64.tar.xz -o /tmp/7zip.tar.xz \
- && echo "c74dc4a48492cde43f5fec10d53fb2a66f520e4a62a69d630c44cb22c477edc6  /tmp/7zip.tar.xz" | sha256sum -c - \
- && mkdir /tmp/7zip \
- && tar -xJf /tmp/7zip.tar.xz -C /tmp/7zip \
- && install -m 755 /tmp/7zip/7zzs /usr/local/bin/7z \
- && mkdir -p /usr/share/licenses/7zip \
- && cp /tmp/7zip/License.txt /usr/share/licenses/7zip/ \
- && rm -rf /tmp/7zip /tmp/7zip.tar.xz
+# Official x86_64 7-Zip (with RAR decoding) is downloaded and checksum-verified by the
+# GitHub workflow into vendor/7zip before this build; Alpine's package disables RAR.
+COPY vendor/7zip/7zzs /usr/local/bin/7z
+COPY vendor/7zip/License.txt /usr/share/licenses/7zip/License.txt
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev

@@ -63,16 +63,21 @@ export async function verifyChecksums(connection, dir, { name }) {
 }
 
 export async function occupied(connection, dir, { names }) {
-  let bytes = 0, fileCount = 0, folders = 0;
+  let bytes = 0, fileCount = 0, folders = 0, skipped = 0;
+  // Unreadable subfolders (permissions) are skipped and counted instead of failing the whole total.
   async function walk(target) {
-    const info = await lstat(target);
+    let info;
+    try { info = await lstat(target); } catch { skipped++; return; }
     if (info.isSymbolicLink()) return;
     if (info.isFile()) { bytes += info.size; fileCount++; return; }
     if (!info.isDirectory()) return;
-    folders++; for (const entry of await readdir(target)) await walk(path.join(target, entry));
+    folders++;
+    let entries;
+    try { entries = await readdir(target); } catch { skipped++; return; }
+    for (let i = 0; i < entries.length; i += 16) await Promise.all(entries.slice(i, i + 16).map(entry => walk(path.join(target, entry))));
   }
   for (const name of Array.isArray(names) ? names : []) await walk((await child(connection, dir, name)).target);
-  return { bytes, files: fileCount, folders };
+  return { bytes, files: fileCount, folders, skipped };
 }
 
 export async function compare(left, right) {

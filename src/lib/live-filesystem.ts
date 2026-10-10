@@ -4,7 +4,7 @@ import type { FileEntry } from './mock-filesystem';
 export const LIVE_PREFIX = 'nas://';
 export type LiveConnection = { id: string; label: string; protocol: string; capabilities?: string[] };
 export type LiveJob = { id: number; type: 'copy' | 'move'; source: { connection: string; path: string }; destination: { connection: string; path: string }; names: string[]; total: number; processed: number; state: 'running' | 'paused' | 'completed' | 'cancelled' | 'failed'; error: string | null; current: string | null; rate?: number; conflict?: import('./mock-filesystem').TransferConflict | null };
-export type LiveListing = { entries: FileEntry[]; space: { available: number; total: number } | null };
+export type LiveListing = { entries: FileEntry[]; space: { available: number; total: number; used?: number } | null };
 
 export const nasMode = () => import.meta.env['VITE_NAS_MODE'] === '1';
 export const isLive = (path: string) => path.startsWith(LIVE_PREFIX);

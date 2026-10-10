@@ -1,4 +1,4 @@
-import { readdir, realpath, lstat, statfs } from 'node:fs/promises';
+import { readdir, realpath, lstat, statfs, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 export function virtualPath(value = '/') {
@@ -31,8 +31,31 @@ export async function listMounted(connection, requested) {
     if (info.isSymbolicLink()) continue;
     result.push({ name: entry.name, directory: info.isDirectory(), size: info.size, date: info.mtime.toISOString(), attr: (info.mode & 0o777).toString(8) });
   }
-  const space = await statfs(directory);
-  return { entries: result, space: { available: space.bavail * space.bsize, total: space.blocks * space.bsize } };
+  return { entries: result, space: await poolSpace(directory) };
+}
+
+/** ZFS reports each dataset separately, so add up every dataset mounted inside the folder to get pool usage. */
+async function poolSpace(directory) {
+  const base = await statfs(directory);
+  let mounts = [];
+  try {
+    const info = await readFile('/proc/self/mountinfo', 'utf8');
+    mounts = info.split('\n').map(line => line.split(' ')[4]).filter(Boolean)
+      .map(point => point.replace(/\\(\d{3})/g, (_, octal) => String.fromCharCode(parseInt(octal, 8))))
+      .filter(point => point.startsWith(directory + '/'));
+  } catch { /* not Linux: fall back to this folder's own numbers */ }
+  const seen = new Set([`${base.type}:${base.blocks}:${base.bfree}`]);
+  let used = (base.blocks - base.bfree) * base.bsize;
+  for (const point of mounts) {
+    try {
+      const s = await statfs(point);
+      const key = `${s.type}:${s.blocks}:${s.bfree}`;
+      if (seen.has(key)) continue; seen.add(key);
+      used += (s.blocks - s.bfree) * s.bsize;
+    } catch { /* unreadable mount: skip */ }
+  }
+  const available = base.bavail * base.bsize;
+  return { available, used, total: used + available };
 }
 
 export async function listFtp(connection, requested, factory) {

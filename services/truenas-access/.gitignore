@@ -3,3 +3,4 @@ secrets/
 connections.json
 *.log
 public/
+vendor/
