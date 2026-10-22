@@ -1,15 +1,13 @@
-import { readFile } from 'node:fs/promises';
 import { Client } from 'basic-ftp';
 import { createAccessServer } from './app.mjs';
 import { listFtp, listMounted } from './providers.mjs';
 import { createSessions } from './session.mjs';
+import { loadConfig } from './config.mjs';
 
-// External TrueNAS container only: never import this into the web app.
-const token = (await readFile(process.env.ACCESS_TOKEN_FILE ?? '/run/secrets/access_token', 'utf8')).trim();
-const connections = JSON.parse(await readFile(process.env.CONNECTIONS_FILE ?? '/run/secrets/connections.json', 'utf8'));
-// The browser UI is enabled only when a password file is configured.
-const passwordFile = process.env.UI_PASSWORD_FILE;
-const sessions = passwordFile ? createSessions((await readFile(passwordFile, 'utf8')).replace(/\r?\n$/, '')) : null;
+// Environment fields support catalog-managed private settings. File-based settings
+// remain available for the standalone TrueNAS Compose deployment.
+const { token, connections, password } = await loadConfig(process.env);
+const sessions = password === null ? null : createSessions(password);
 const server = createAccessServer({
   token, connections, sessions,
   publicDir: process.env.PUBLIC_DIR ?? new URL('../public', import.meta.url).pathname,
