@@ -2,7 +2,7 @@ name: NAS image (app + access service)
 
 on:
   push:
-    branches: [main]
+    branches: [main, truenas-catalog-credentials]
   workflow_dispatch:
 
 permissions:
